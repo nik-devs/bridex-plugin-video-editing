@@ -33,15 +33,9 @@ From the Bridex plugin catalog (Settings → Plugins → Catalog). The install r
 yt-dlp are fetched on first use into `$BRIDEX_HOME/state/video-editing/`, together with
 the font store.
 
-Optional `bridex.yaml`:
-
-```yaml
-plugins:
-  video-editing:
-    config:
-      workers: auto          # Chrome processes per render (~256 MB each); 1 on a small server
-      parallel_renders: 1    # renders at once
-```
+Nothing to set up: renders at once follow the machine's cores (two from 16 up), and
+HyperFrames sizes its Chrome workers by CPU and memory — on a small server it drops to
+one worker and screenshot capture by itself.
 
 ## Credits
 

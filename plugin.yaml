@@ -5,21 +5,7 @@
 # agent's jail, and outputs go into workspace artifacts with provenance.
 name: video-editing
 title: Video editing
-version: 0.1.1
+version: 0.1.2
 kind: integration
 description: Agents edit video — reels, captions, titles, transitions, music — as HTML/CSS/GSAP compositions rendered to MP4, with fast libass captions, any font and reference analysis.
 entry: index.mjs
-config_schema:
-  type: object
-  properties:
-    workers:
-      type: string
-      title: Chrome workers per render
-      default: auto
-      description: Each is a Chrome process (~256 MB). auto picks by CPU; 1 on a small server
-    parallel_renders:
-      type: integer
-      title: Renders at once
-      default: 1
-      minimum: 1
-      maximum: 4

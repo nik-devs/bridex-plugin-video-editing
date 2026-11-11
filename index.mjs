@@ -2,11 +2,16 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { createRequire } from "node:module";
-import { children, json, killGroup, makeJail, newFiles, slug, tail, text } from "./lib/util.mjs";
-import { makeFontStore } from "./lib/fonts.mjs";
-import { HF_OPEN, makeHf } from "./lib/hf.mjs";
-import { burnCaptions, encode, makeFetcher, probe, proxy, sheet, wordsFrom } from "./lib/media.mjs";
-import { buildCaptions, buildReel, buildTitle, fontsOf, projectReadme, projectSlug } from "./lib/templates.mjs";
+import os from "node:os";
+
+// the host reloads this file with ?v=<commit>: its modules come with the same mark, or an
+// update would run the new index over the previous version's cached modules until a restart
+const v = new URL(import.meta.url).search;
+const { children, json, killGroup, makeJail, newFiles, slug, tail, text } = await import(`./lib/util.mjs${v}`);
+const { makeFontStore } = await import(`./lib/fonts.mjs${v}`);
+const { HF_OPEN, makeHf } = await import(`./lib/hf.mjs${v}`);
+const { burnCaptions, encode, makeFetcher, probe, proxy, sheet, wordsFrom } = await import(`./lib/media.mjs${v}`);
+const { buildCaptions, buildReel, buildTitle, fontsOf, projectReadme, projectSlug } = await import(`./lib/templates.mjs${v}`);
 
 /**
  * Video editing for agents. HyperFrames is the editor: a video is an HTML/CSS
@@ -32,7 +37,10 @@ const HF_VERSION = (() => {
 })();
 
 export default async function activate(ctx) {
-  const cfg = { workers: "auto", parallel_renders: 1, ...(ctx.config ?? {}) };
+  // nothing to set up: one render takes every core it is given, so a second one at the same
+  // time only halves both — big machines get two. Chrome workers are HyperFrames' call (it
+  // sizes them by CPU and memory, and drops to a safe single-worker profile on small servers)
+  const cfg = { parallel_renders: Math.max(1, Math.min(4, Math.floor(os.cpus().length / 8))), ...(ctx.config ?? {}) };
   const state = path.join(ctx.paths.state, "video-editing");
   fs.mkdirSync(state, { recursive: true });
   const jail = makeJail(ctx);
@@ -241,7 +249,7 @@ export default async function activate(ctx) {
       const ext = format === "png-sequence" ? "" : `.${format}`;
       const name = slug(args.name ?? `${path.basename(dir)}-${format === "mp4" ? "" : `${format}-`}${crypto.randomBytes(3).toString("hex")}`.replace(/--/g, "-"));
       const out = path.join(outDir(call), `${name}${ext}`);
-      const flags = ["--format", format, "--quality", String(args.quality ?? "looks"), "--workers", String(cfg.workers ?? "auto")];
+      const flags = ["--format", format, "--quality", String(args.quality ?? "looks"), ...(cfg.workers ? ["--workers", String(cfg.workers)] : [])];
       if (args.composition) flags.push("-c", String(args.composition));
       if (args.fps) flags.push("--fps", String(args.fps));
       if (args.resolution) flags.push("--resolution", String(args.resolution));

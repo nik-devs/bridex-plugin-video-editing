@@ -330,7 +330,7 @@ export default async function activate(ctx) {
         const missing = face ? fonts.missingGlyphs(face.file, all) : "";
         if (missing) return text(`error: ${style.font} has no glyphs for «${missing}» — pick another font (video_fonts check) or another weight`);
       }
-      const name = slug(args.name ?? `${path.basename(video).replace(/\.[^.]+$/, "")}-captions`);
+      const name = slug(args.name ?? `${path.basename(video).replace(/\.[^.]+$/, "")}-${args.mode}-${crypto.randomBytes(3).toString("hex")}`);
       const out = path.join(outDir(call), `${name}.mp4`);
       const done = await burnCaptions({ video, mode: args.mode, words, phrases: args.phrases, style, fontsDir: fonts.dir, outFile: out });
       const artifact = jail.save(call, out, `${name}.mp4`, `captions (${args.mode}) on ${path.basename(video)}`, { provider: "libass", model: "ffmpeg-caption-burn-ass", params: { mode: args.mode, style } });
@@ -437,7 +437,7 @@ export default async function activate(ctx) {
     },
     handler: async (args, call) => {
       const src = jail.resolve(call.workspace, args.src);
-      const name = slug(args.name ?? `${path.basename(src).replace(/\.[^.]+$/, "")}-${args.target}`);
+      const name = slug(args.name ?? `${path.basename(src).replace(/\.[^.]+$/, "")}-${args.target}-${crypto.randomBytes(3).toString("hex")}`);
       const out = path.join(outDir(call), `${name}.mp4`);
       const r = await encode(src, out, args.target, args.max_mb);
       const artifact = jail.save(call, out, `${name}.mp4`, `${args.target} encode of ${path.basename(src)}`, { provider: "ffmpeg", model: "libx264", params: { target: args.target, ...(args.max_mb ? { max_mb: args.max_mb } : {}) } });

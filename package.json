@@ -1,11 +1,12 @@
 {
   "name": "bridex-plugin-video-editing",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Video editing for Bridex agents: HyperFrames compositions, libass captions, fonts, references, delivery encodes",
   "license": "MIT",
   "dependencies": {
+    "@puppeteer/browsers": "^3.2.2",
     "fontkit": "2.0.4",
     "hyperframes": "0.9.33"
   }

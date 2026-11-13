@@ -2,7 +2,9 @@
 
 Canonical home: github.com/nik-devs/ffmpeg-caption-burn-ass (vendored here). Three modes:
 - karaoke-highlight: word groups, active word tinted+scaled via override tags
-  (more reliable than karaoke \\k, full control per word);
+  (more reliable than karaoke \\k, full control per word); highlightMode
+  "cumulative" keeps every word of the group already spoken tinted too, the
+  rest wait in the primary colour (default "active": only the current one);
 - word-carousel: one word at a time, centered, 80->100 pop via \\t();
 - phrases: one given phrase per event, exactly its [start, end], on a
   rounded plate (colour, opacity, radius, padding) sized to the text.
@@ -17,8 +19,9 @@ import json, math, re, subprocess
 
 PLAY_X, PLAY_Y = 1080, 1920
 DEFAULTS = {"font": "Liberation Sans", "fontSize": 88, "primaryColor": "#FFFFFF",
-            "highlightColor": "#FFE600", "outline": 4, "maxWordsPerGroup": 4,
+            "highlightColor": "#FFE600", "highlightMode": "active", "outline": 4, "maxWordsPerGroup": 4,
             "bold": True, "uppercase": False}
+HIGHLIGHT_MODES = ("active", "cumulative")
 
 def _hex(h):
     h = h.lstrip("#").strip()
@@ -193,13 +196,18 @@ def build_ass(words, mode, style=None, *, phrases=None, video_size=None, font_di
         # Montserrat Bold), mixed case ~0.5, +10% for the scaled-up active word
         em = float(st["fontSize"]) * (0.58 if st.get("uppercase") else 0.5) * 1.1
         max_chars = max(8, min(30, int((PLAY_X - 160 - 40) / em)))
+        if st["highlightMode"] not in HIGHLIGHT_MODES:
+            raise ValueError(f"unknown highlightMode {st['highlightMode']!r} ({' | '.join(HIGHLIGHT_MODES)})")
+        cumulative = st["highlightMode"] == "cumulative"
+        def shown(j, i, w):
+            if j == i: return f"{{\\c{hl}\\fscx110\\fscy110}}{w['word']}{{\\c{prim}\\fscx100\\fscy100}}"
+            # cumulative: what was said stays tinted, at its normal size
+            if cumulative and j < i: return f"{{\\c{hl}}}{w['word']}{{\\c{prim}}}"
+            return w["word"]
         for g in _groups(ws, st["maxWordsPerGroup"], max_chars):
             for i in range(len(g)):
                 end = g[i + 1]["start"] if i < len(g) - 1 else g[-1]["end"]
-                text = " ".join(
-                    (f"{{\\c{hl}\\fscx110\\fscy110}}{w['word']}{{\\c{prim}\\fscx100\\fscy100}}" if j == i else w["word"])
-                    for j, w in enumerate(g))
-                lines.append(_dlg(g[i]["start"], end, text))
+                lines.append(_dlg(g[i]["start"], end, " ".join(shown(j, i, w) for j, w in enumerate(g))))
     elif mode == "word-carousel":
         for i, w in enumerate(ws):
             end = max(w["end"], ws[i + 1]["start"]) if i + 1 < len(ws) else w["end"]

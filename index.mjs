@@ -314,7 +314,7 @@ export default async function activate(ctx) {
   ctx.registerTool({
     name: "video_captions",
     description:
-      "Burn captions into a finished video in ONE ffmpeg pass (libass): seconds, not a re-render — the fast path for speech captions, long videos and batches. Modes: karaoke-highlight (groups of words, the spoken one tinted and scaled), word-carousel (one word at a time, pop-in), phrases (each phrase on a rounded plate sized to the text). Words come from a transcript file (eleven_transcribe / openrouter_run / HyperFrames transcript.json) or are passed directly. Style: font (a family from video_fonts), fontSize, primaryColor, highlightColor, outline, outlineColor, position bottom|center|top, marginV, maxWordsPerGroup, bold, uppercase, box {color, opacity, padding}, plate {color, opacity, radius, padX, padY} (phrases). Captions that are design — animated, styled per word — go through video_new captions instead.",
+      "Burn captions into a finished video in ONE ffmpeg pass (libass): seconds, not a re-render — the fast path for speech captions, long videos and batches. Modes: karaoke-highlight (groups of words, the spoken one tinted and scaled; highlight_mode cumulative keeps the words already said tinted too), word-carousel (one word at a time, pop-in), phrases (each phrase on a rounded plate sized to the text). Words come from a transcript file (eleven_transcribe / openrouter_run / HyperFrames transcript.json) or are passed directly. Style: font (a family from video_fonts), fontSize, primaryColor, highlightColor, outline, outlineColor, position bottom|center|top, marginV, maxWordsPerGroup, bold, uppercase, box {color, opacity, padding}, plate {color, opacity, radius, padX, padY} (phrases). Captions that are design — animated, styled per word — go through video_new captions instead.",
     schema: {
       video: z.string().describe("artifacts/… path or a path in your workspace"),
       mode: z.enum(["karaoke-highlight", "word-carousel", "phrases"]),
@@ -322,6 +322,10 @@ export default async function activate(ctx) {
       words: z.array(z.object({ word: z.string(), start: z.number(), end: z.number() })).optional(),
       phrases: z.array(z.object({ text: z.string(), start: z.number(), end: z.number() })).optional().describe("phrases mode: the lines and their times"),
       style: z.record(z.string(), z.unknown()).optional(),
+      highlight_mode: z
+        .enum(["active", "cumulative"])
+        .optional()
+        .describe("karaoke-highlight: tint only the word being spoken (active, default) or keep the group's spoken words tinted while the rest wait in primaryColor (cumulative)"),
       name: z.string().max(60).optional(),
     },
     handler: async (args, call) => {
@@ -331,6 +335,7 @@ export default async function activate(ctx) {
       if (args.mode === "phrases" && !args.phrases?.length) return text("error: phrases mode needs phrases [{text,start,end}]");
       if (args.mode !== "phrases" && !words?.length) return text("error: pass transcript (a .json with word timings) or words");
       const style = { ...(args.style ?? {}) };
+      if (args.highlight_mode) style.highlightMode = args.highlight_mode;
       if (style.font) {
         const face = fonts.faces(String(style.font)).find((f) => /\.(ttf|otf)$/i.test(f.file));
         if (face) style.font = face.assName;

@@ -19,7 +19,7 @@ cut-outs (fal): the HyperFrames commands that would run models on the server are
 | `video_new` | a project in the agent's working directory: `reel` from an edit list (shots, captions, hook, music, cut styles), `captions` (animated word captions from a transcript), `title` (transparent title card), or any HyperFrames example |
 | `video_hf` | a HyperFrames command as is: `check`, `snapshot`, `compare`, `catalog`, `add`, `measure`, `beats`, `audio`, `media-treatment`, `grade-compare`, `docs`… |
 | `video_render` | render to artifacts; long renders go on in the background and wake the agent |
-| `video_captions` | burn captions into a finished video in one ffmpeg pass (libass): karaoke-highlight, word-carousel, phrases on plates |
+| `video_captions` | burn captions into a finished video in one ffmpeg pass (libass): karaoke-highlight (`highlight_mode` active, or cumulative — the words already said stay tinted), word-carousel, phrases on plates |
 | `video_fonts` | add any font (Google Fonts by name — static weights with Cyrillic — a URL or a file), check glyph coverage, a board of candidates, write fonts into a project |
 | `video_inspect` | what a source is (rotation, HDR, fps), a timecode proxy for `video_understand`, a contact sheet |
 | `video_encode` | delivery encodes: Instagram, Telegram (fits a size cap), preview, master |
